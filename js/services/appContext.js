@@ -1,5 +1,5 @@
 // Service for running code in the context of the application being debugged
-angular.module('panelApp').factory('appContext', function (chromeExtension) {
+angular.module('panelApp').factory('appContext', function (chromeExtension,appDebug) {
 
   // Public API
   // ==========
@@ -32,7 +32,11 @@ angular.module('panelApp').factory('appContext', function (chromeExtension) {
     refresh: function (cb) {
       chromeExtension.eval(function (window) {
         window.document.location.reload();
-      }, cb);
+      },function() {
+          setTimeout(function(){
+              chromeExtension.eval(appDebug.injectFn,cb);
+          },100);
+      });
     },
 
     inspect: function (scopeId) {
@@ -46,17 +50,27 @@ angular.module('panelApp').factory('appContext', function (chromeExtension) {
 
     // takes a bool
     setDebug: function (setting) {
-      if (setting) {
-        chromeExtension.eval(function (window) {
-          window.document.cookie = '__ngDebug=true;';
-          window.document.location.reload();
-        });
-      } else {
-        chromeExtension.eval(function (window) {
-          window.document.cookie = '__ngDebug=false;';
-          window.document.location.reload();
-        });
-      }
+      var that = this;
+
+        if (setting) {
+          chromeExtension.eval(function (window) {
+            window.document.cookie = '__ngDebug=true;';
+            window.document.location.reload();
+          },function() {
+              setTimeout(function(){
+                  chromeExtension.eval(appDebug.injectFn);
+              },100);
+          });
+        } else {
+          chromeExtension.eval(function (window) {
+              window.document.cookie = '__ngDebug=false;';
+              window.document.location.reload();
+            },function() {
+              setTimeout(function(){
+                  chromeExtension.eval(appDebug.injectFn);
+              },100);
+          });
+        }
     },
 
     getDebug: function (cb) {
